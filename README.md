@@ -1,5 +1,7 @@
 # ControllerRemap 0.3.1
 
+![banner](assets/banner.png)
+
 Custom controller layouts for Farever, designed for accessibility.
 A standalone HLX mod; SolarFlare is not required.
 
@@ -13,7 +15,7 @@ A standalone HLX mod; SolarFlare is not required.
 - Click the controller diagram beside the editor to inspect assignments, or drag a button to rebind.
 - Save, load, share and delete profiles; toggle overrides and menu/aim A/B swapping.
 
-![uiOnly](uiOnly.png)
+![uiOnly](assets/uiOnly.png)
 
 ## Install
 
@@ -47,7 +49,7 @@ The success message means the binding is active now. **Save profile** keeps the
 layout after restarting the game; it is not needed to activate each rebind.
 With overrides off, edits update the layout and the message says they are inactive.
 
-![fullpic2](fullpic2.png)
+![fullpic2](assets/fullpic2.png)
 
 ## Find a button
 
@@ -59,6 +61,8 @@ including modifier and weapon/class mode uses. Expand Stick directions for axes.
 Select **Layout** or **Game now** to compare the configured layout with live bindings.
 Click a result to edit it, or right-click for its actions. You can also drag a button
 from the controller palette onto the button field in the editor; conflicts still require confirmation.
+
+![clickanddrag](assets/clickanddrag.png)
 
 ## Profiles
 
@@ -84,3 +88,5 @@ runs the offline regression tests. The native SFimgui renderer is bundled in the
 The legacy `native/sfpad/` probe source is kept for reference and is not used at runtime.
 
 F10 and returning to camera control close all panels and cancel an unresolved warning.
+
+![buttonassigned](assets/buttonassigned.png)
