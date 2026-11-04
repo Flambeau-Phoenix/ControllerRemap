@@ -1,6 +1,6 @@
 <p align="center"><img src="assets/cremap.png" alt="ControllerRemap logo" width="180"></p>
 
-# ControllerRemap
+# ControllerRemap - Custom Keybinds for Your Gamepad
 
 Custom controller layouts for **Farever**.
 
@@ -10,6 +10,8 @@ Custom controller layouts for **Farever**.
 - Swap menu/aim Confirm and Cancel on A/B with one switch.
 - Turn overrides off to return to the game's bindings, or use Restore all.
 - One F10 window, grouped actions and searchable bindings.
+
+![uiOnly](uiOnly.png)
 
 ## Install
 
@@ -34,6 +36,8 @@ Share files from `hlx/mods/controllerremap/profiles/`.
 The A/B switch affects menus and aim confirmation only. Keyboard bindings stay as
 configured in the game. Overrides remain active while the window is closed;
 save your layout before quitting.
+
+![fullpic2](fullpic2.png)
 
 ## Source
 
