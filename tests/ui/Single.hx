@@ -1,0 +1,1 @@
+typedef Single = Float;
