@@ -1,9 +1,0 @@
--cp src
--cp deps/gamelib
--cp deps/hlx-runtime/src
--cp deps/hl-imgui
--cp deps/format
--D hl-ver=1.17.0
--dce full
--main controllerremap.ModEntry
--hl build/controllerremap.hl
