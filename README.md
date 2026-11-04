@@ -2,8 +2,7 @@
 
 # ControllerRemap
 
-Custom controller layouts for **Farever**. Made for accessibility, at Narnun's
-request for Emuru.
+Custom controller layouts for **Farever**.
 
 - Remap controller buttons, LB/RB/LT/RT combinations and weapon/class mode holds.
 - Swap bindings between actions, including their holds and button alternatives.
