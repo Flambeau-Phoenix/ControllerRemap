@@ -1,4 +1,4 @@
-# ControllerRemap 0.3.1
+# ControllerRemap v1.3
 
 ![banner](assets/banner.png)
 
