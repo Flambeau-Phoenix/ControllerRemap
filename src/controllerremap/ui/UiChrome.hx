@@ -411,7 +411,7 @@ class UiChrome {
 	/** Bordered child. Always pairs begin/end.
 	 *  Optional windowFlags (e.g. NoScrollbar) so only inner UiScope.child scrolls. */
 	public static function celChild(id:String, size:ImVec2, draw:Void->Void,
-			windowFlags:Int = 0):Void {
+			windowFlags:Int = 0, childFlags:Int = 0):Void {
 		var theme = ThemePalette.current();
 		var pushed = 0;
 		var pushedVars = 0;
@@ -423,7 +423,7 @@ class UiChrome {
 			var width = size.x <= 0 ? avail.x : size.x;
 			var height = size.y <= 0 ? avail.y : size.y;
 			var dl = ImGui.getWindowDrawList();
-			ImGui.ImDrawList_AddRectFilled(dl, ImGui.vec2(pos.x + 3, pos.y + 5),
+			if((childFlags&ImGuiChildFlags.AutoResizeY)==0)ImGui.ImDrawList_AddRectFilled(dl, ImGui.vec2(pos.x + 3, pos.y + 5),
 				ImGui.vec2(pos.x + width + 3, pos.y + height + 5), 0x44000000, 10);
 			ImGui.pushStyleVar(ImGuiStyleVar.ChildRounding, 4);
 			pushedVars++;
@@ -435,7 +435,7 @@ class UiChrome {
 				ImGui.vec4(theme.cellBg.x, theme.cellBg.y, theme.cellBg.z, 0.94));
 			pushed++;
 			UiScope.child(id, size, draw,
-				ImGuiChildFlags.Borders | ImGuiChildFlags.AlwaysUseWindowPadding,
+				ImGuiChildFlags.Borders | ImGuiChildFlags.AlwaysUseWindowPadding | childFlags,
 				windowFlags);
 		} catch (e:Dynamic) {
 			failed = true;

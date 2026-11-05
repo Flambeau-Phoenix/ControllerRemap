@@ -516,21 +516,26 @@ class ModEntry {
         if(scrollToEditor){ImGui.setScrollY(0);scrollToEditor=false;}
         if(scrollToProfiles){ImGui.setScrollY(bindingHeight+12);scrollToProfiles=false;}
         if(scrollToController){ImGui.setScrollY(bindingHeight+profileHeight+24);scrollToController=false;}
-        bindingSize.x=0;bindingSize.y=bindingHeight;
-        UiChrome.celChild("##bindingCard",bindingSize,bindingFn);UiChrome.gap(8);
-        profileSize.x=0;profileSize.y=profileHeight;
-        UiChrome.celChild("##profileCard",profileSize,profileCardFn);UiChrome.gap(8);
-        ImGui.getContentRegionAvail(cardAvail);controllerSize.x=0;
-        controllerSize.y=Math.max(350,cardAvail.y-4);
-        UiChrome.celChild("##controllerCard",controllerSize,controllerFn);
+        var cardFlags=ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoScrollWithMouse;
+        var autoHeight=imgui.Enums.ImGuiChildFlags.AutoResizeY|imgui.Enums.ImGuiChildFlags.AlwaysAutoResize;
+        bindingSize.x=0;bindingSize.y=0;
+        UiChrome.celChild("##bindingCard",bindingSize,bindingFn,cardFlags,autoHeight);
+        ImGui.getItemRectSize(bindingSize);bindingHeight=bindingSize.y;UiChrome.gap(8);
+        profileSize.x=0;profileSize.y=0;
+        UiChrome.celChild("##profileCard",profileSize,profileCardFn,cardFlags,autoHeight);
+        ImGui.getItemRectSize(profileSize);profileHeight=profileSize.y;UiChrome.gap(8);
+        controllerSize.x=0;controllerSize.y=0;
+        UiChrome.celChild("##controllerCard",controllerSize,controllerFn,cardFlags,autoHeight);
         ControllerScroll.apply();
     }
     static function drawBindingCardBody():Void {
+        ImGui.setScrollY(0);
         if(ImGui.isWindowFocused())editorFocus.mark(EditorFocus.EDITOR);
         drawBinding();
         ControllerScroll.apply();
     }
     static function drawProfileCardBody():Void {
+        ImGui.setScrollY(0);
         if(ImGui.isWindowFocused())editorFocus.mark(EditorFocus.PROFILES);
         UiChrome.centeredHeader("Profiles",38);UiChrome.gap(8);
         drawProfileControls();
@@ -740,7 +745,7 @@ class ModEntry {
         ImGui.endDisabled();if(restoreFailure!=null)throw restoreFailure;
         ImGui.setCursorPosX(headerX);ImGui.setCursorPosY(headerY+headerHeight+6);
         note(controllerHint);
-        if(controller.connected&&(controller.navigationStatus<0||pointer.hidden&&controller.pointerStatus<0))note("Controller controls need the bundled SFCursor. Restart Farever after updating it.");
+        if(controller.supportIssue!="")note(controller.supportIssue);
         if(Help.show){
             note("D-pad / left stick: move. Right stick: scroll. A: select. B: back. LB / RB: category. X / Y: section.");
             note("F10 or hold LT + RT + RB and press A: open / close. Back + Start also works.");
@@ -755,7 +760,7 @@ class ModEntry {
         UiChrome.celChild("##left",leftSize,leftFn);ImGui.sameLine(0,8);UiScope.child("##right",rightSize,rightFn);
         UiChrome.gap(6);UiScope.child("##controllerLegend",legendSize,legendFn,0,ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoNav);
         ControllerScroll.apply();
-        ConflictDialog.controllerNavigation=controller.connected&&controller.focused&&controller.state.navigation;
+        ConflictDialog.controllerNavigation=pointer.hidden&&controller.connected&&controller.focused&&controller.state.navigation;
         ConflictDialog.draw();
         if(ConflictDialog.focusRecovered)controller.cancel();
     }

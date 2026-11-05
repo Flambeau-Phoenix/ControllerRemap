@@ -16,6 +16,8 @@ class ControllerInput {
     public var captured(default,null)=-1;
     public var guardStatus(default,null)=0;
     public var pointerStatus(default,null)=0;
+    public var policyStatus(default,null)=0;
+    public var supportIssue(default,null)="";
     public var down(default,null):Array<Bool>=[for(_ in 0...24)false];
     var codes:Array<Int>=[for(_ in 0...16)-1];
     var navigation:ControllerNavigation;
@@ -24,6 +26,7 @@ class ControllerInput {
     var owner:hl.Bytes;
     var hasGuard=false;var hasPolicy=false;var hasConfinement=false;
     var hasPointer=false;
+    var helperReady=false;
     var index=-1;
     var focusLease:InputFocusLease;
     var windowGetter:hlx.runtime.ResolvedMember;
@@ -37,6 +40,9 @@ class ControllerInput {
         hasPolicy=hl.Api.isPrimLoaded(CursorNative.policy);
         hasConfinement=hl.Api.isPrimLoaded(CursorNative.confinement);
         hasPointer=hl.Api.isPrimLoaded(CursorNative.pointer);
+        helperReady=hasGuard&&hasPolicy&&hasConfinement&&hasPointer&&hl.Api.isPrimLoaded(ControllerNavigation.configure);
+        if(!helperReady)
+            supportIssue="SFCursor is missing or outdated. Extract the full ControllerRemap ZIP into Farever, then restart.";
         focusLease=new InputFocusLease(readGameFocus,writeGameFocus);
     }
     function axis(i:Int,value:Float):Void down[i]=Math.isFinite(value)&&value>=(down[i]?0.35:0.65);
@@ -78,10 +84,12 @@ class ControllerInput {
         navigation.route(down,owns,state.navigation,submitEvents);
         try focusLease.update(owns&&connected&&navigation.status==1,focused,connected&&held)catch(_:Dynamic){}
         var mouseFree=free&&!hidePointer;
-        try {if(hasGuard)guardStatus=CursorNative.guard(owner,owns&&mouseFree);}catch(_:Dynamic){guardStatus=-1;}
-        try {if(hasPolicy)CursorNative.policy(owner,true,mouseFree,owns);}catch(_:Dynamic){}
+        try guardStatus=hasGuard?CursorNative.guard(owner,owns&&mouseFree):-9 catch(_:Dynamic){guardStatus=-1;}
+        try policyStatus=hasPolicy?CursorNative.policy(owner,true,mouseFree,owns):-9 catch(_:Dynamic){policyStatus=-1;}
         try {if(hasConfinement&&active)CursorNative.confinement(!free);}catch(_:Dynamic){}
         try pointerStatus=hasPointer?CursorNative.pointer(owner,owns&&connected&&hidePointer):-9 catch(_:Dynamic){pointerStatus=-1;}
+        if(helperReady)
+            supportIssue=guardStatus<0||policyStatus<0||pointerStatus<0||navigation.status<0?"SFCursor could not activate. Restart Farever after extracting the full ControllerRemap ZIP.":"";
     }
     public function cancel():Void state.cancel();
 }

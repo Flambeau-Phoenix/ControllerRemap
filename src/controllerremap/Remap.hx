@@ -12,7 +12,7 @@ typedef PendingEdit = {plan:BindingPlan,revision:Int,lines:Array<String>,swapTex
  * All filesystem access and engine reads run in observe; the UI consumes cached rows.
  */
 class Remap {
-    public static inline var VERSION="1.2.2";
+    public static inline var VERSION="1.2.3";
     public static inline var DIR="hlx/mods/controllerremap";
     public static inline var PROFILES=DIR+"/profiles";
     public static var PADS:Array<String>=["A","B","X","Y","LB","RB","LT","RT","Back","Start","AnalogClick","RanalogClick",

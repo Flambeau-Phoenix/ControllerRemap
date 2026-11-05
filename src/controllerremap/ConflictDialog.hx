@@ -39,9 +39,11 @@ class ConflictDialog {
     static var tableFn:Void->Void;static var rowsFn:Void->Void;
     static var hintMeasure:ImVec2;static var legendMeasure:ImVec2;
     static var footerHint="";static var footerLegend="";static var footerFn:Void->Void;
+    static var buttonOrigin:ImVec2;
     public static function init():Void {
         opened=new BoolRef(true);size=ImGui.vec2(760,620);minimum=ImGui.vec2(700,540);maximum=ImGui.vec2(1100,1000);pivot=ImGui.vec2(0.5,0.5);
         hintMeasure=ImGui.vec2(0,0);legendMeasure=ImGui.vec2(0,0);
+        buttonOrigin=ImGui.vec2(0,0);
         footerFn=drawFooter;footerLegend=ControllerLegend.text(EditorFocus.EDITOR,false,true,false);
         button=ImGui.vec2(144,30);list=ImGui.vec2(0,200);zero=ImGui.vec2(0,0);available=ImGui.vec2(0,0);
         pos=ImGui.vec2(0,0);titlePos=ImGui.vec2(0,0);band=ImGui.vec2(0,52);end=ImGui.vec2(0,0);
@@ -66,6 +68,8 @@ class ConflictDialog {
     public static function draw():Void {
         focusRecovered=false;
         if(seen==null)return;
+        // A decision is queued for observe(). Do not reopen the closed native popup or overwrite it.
+        if(choice>=0)return;
         if(Remap.pendingEdit==null&&!visible&&!opening)return;
         // Another UI can clear native popup/focus state without resolving our pending edit.
         // Reopen that unresolved dialog instead of leaving an invisible modal lock behind.
@@ -120,6 +124,7 @@ class ConflictDialog {
         if(controllerNavigation&&!ImGui.isAnyItemFocused()){
             ImGui.setWindowFocus();ImGui.setKeyboardFocusHere();focusRecovered=true;
         }
+        ImGui.getCursorScreenPos(buttonOrigin);
         if(UiChrome.ghostButton("Cancel##conflict",button))finish(0);
         ImGui.setItemDefaultFocus();ImGui.sameLine(0,16);
         ImGui.beginDisabled(edit.plan.swap==null);var failure:Dynamic=null;
