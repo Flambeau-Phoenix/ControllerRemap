@@ -48,6 +48,5 @@ This reads the extension's actual installer, supplies the verified archive entri
 
 Keep HLX core listed as a requirement on the release page and link the Farever extension in the Vortex instructions. SFimgui, its font and SFCursor remain mandatory bundled runtime files. Our package audit already rejects a release ZIP missing any of them. Documentation and diagnostics stay outside the four-file player ZIP.
 
-## Verified here — 2026-11-05
 
-The locally installed Farever extension reports version 0.0.1; this is separate from the tester's unknown extension version. The extension's Nexus listing currently shows 0.0.6, while its GitHub changelog includes 0.0.7. Use the current published extension rather than treating the local copy as a release recommendation. No installed extension was updated or modified during this investigation.
+
