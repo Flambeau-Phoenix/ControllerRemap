@@ -20,14 +20,7 @@ class BindingPlan {
     static function contains(pads:Array<ProfilePad>,p:ProfilePad):Bool {for(other in pads)if(equal(p,other))return true;return false;}
     public static function modifier(code:Int):String return switch(code){case 3:"LT";case 4:"LB";case 5:"RT";case 6:"RB";default:"";};
 
-    /** Shared menu/aim/camera/raw contexts should not be erased by gameplay edits. */
-    public static function context(id:String):String {
-        if(StringTools.startsWith(id,"AimSkill"))return "aim";
-        if(StringTools.startsWith(id,"Menu_")||StringTools.startsWith(id,"Map_")||["CloseWindow","CloseChat","DialogConfirm","SeeDetails","UILeft","UIRight","UseFloatingCursor","LeftClick","RightClick","MiddleClick","CtrlLeftClick","CtrlRightClick","ShiftLeftClick","ShiftRightClick"].indexOf(id)>=0)return "menu";
-        if(ActionGroups.of(id)==5)return "camera";
-        if(StringTools.startsWith(id,"Pad_")||StringTools.startsWith(id,"RawPad")||StringTools.startsWith(id,"Debug")||StringTools.startsWith(id,"ShortcutTrailer")||StringTools.startsWith(id,"ShortcutConsole")||StringTools.startsWith(id,"Trailer")||StringTools.startsWith(id,"Editor"))return "raw:"+id;
-        return "gameplay";
-    }
+    public static function context(id:String):String return InputFamilies.family(id);
     /** Only an identical button, explicit hold and mode hold can conflict.
      * Context is checked by the planner; A, LT+A and class-mode A stay separate.
      */
@@ -38,7 +31,7 @@ class BindingPlan {
     public function new(id:String,wanted:Array<ProfilePad>,layout:Map<String,Array<ProfilePad>>,rescan:Bool=false) {
         action=id;before=copy(layout.get(id));after=copy(wanted);
         var added=[for(p in after)if(rescan||!contains(before,p))p];
-        var others=[for(key in layout.keys())if(key!=id&&context(key)==context(id))key];others.sort(Reflect.compare);
+        var others=[for(key in layout.keys())if(key!=id&&InputFamilies.conflicts(key,id))key];others.sort(Reflect.compare);
         for(key in others){
             var pads=layout.get(key);
             for(i in 0...pads.length)for(p in added)if(overlaps(p,pads[i],layout)){
@@ -61,7 +54,7 @@ class BindingPlan {
         other[hit.index]={pad:before[changed].pad,mod:before[changed].mod,mode:before[changed].mode};
         // A swapped-out button must not introduce a second unresolved collision.
         for(key in layout.keys()){
-            if(key==hit.action||context(key)!=context(hit.action))continue;
+            if(key==hit.action||!InputFamilies.conflicts(key,hit.action))continue;
             var pads=key==action?after:layout.get(key);
             for(p in pads)if(overlaps(p,other[hit.index],layout)){
                 swapReason="The previous binding is also used by "+ActionLabels.display(key)+". Confirm move or cancel instead.";return;

@@ -16,16 +16,25 @@ class ToolWindow {
     static var positions:Map<String,ImVec2>=new Map();
     static var placed:Map<String,Bool>=new Map();
     static var focus:Map<String,Bool>=new Map();
+    static var focused:Map<String,Bool>=new Map();
+    static var registered:Array<String>=[];
+    public static function otherFocused(title:String):Bool {
+        for(name in registered)if(name!=title&&focused.get(name)==true)return true;
+        return false;
+    }
     public static function requestFocus(title:String):Void focus.set(title,true);
     static var maximum:ImVec2;
     static var align:ImVec2;
     public static function init():Void {maximum=ImGui.vec2(2400,1600);align=ImGui.vec2(0.5,0.5);}
     public static function register(title:String,w:Single,h:Single,minW:Single,minH:Single):Void {
+        if(!sizes.exists(title))registered.push(title);
+        focused.set(title,false);
         sizes.set(title,ImGui.vec2(w,h));minima.set(title,ImGui.vec2(minW,minH));
         positions.set(title,ImGui.vec2(0,0));
     }
     public static function drawMenuWindow(title:String,open:BoolRef,body:Void->Void,flags:Int=0):Void {
-        if(!open.get())return;
+        if(!open.get()){focused.set(title,false);return;}
+        ImGui.setNextWindowDockID(0,ImGuiCond.Always);
         if(focus.get(title)==true){ImGui.setNextWindowFocus();focus.remove(title);}
         ImGui.setNextWindowSize(sizes.get(title),ImGuiCond.FirstUseEver);
         ImGui.setNextWindowSizeConstraints(minima.get(title),maximum);
@@ -41,6 +50,7 @@ class ToolWindow {
         try {
             var shown=ImGui.begin(title,open,flags|ImGuiWindowFlags.MenuBar|ImGuiWindowFlags.NoDocking|ImGuiWindowFlags.NoCollapse);
             begun=true;if(shown)body();
+            focused.set(title,open.get()&&ImGui.isWindowFocused(imgui.Enums.ImGuiFocusedFlags.RootAndChildWindows));
         }catch(e:Dynamic)failure=e;
         if(begun)ImGui.end();
         ImGui.popStyleVar();UiChrome.popCelShade(shade);

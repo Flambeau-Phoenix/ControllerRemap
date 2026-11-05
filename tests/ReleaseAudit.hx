@@ -15,7 +15,7 @@ class ReleaseAudit {
             if(StringTools.startsWith(p.name,"solarflare.")||StringTools.startsWith(p.name,"simplelfg."))throw "Release depends on an external mod namespace: "+p.name;
         default:}
         for(s in data.strings)if(s=="controller_helper_log.txt")throw "Release retains the controller recording path";
-        sys.io.File.saveContent("build/release-imports.json",haxe.Json.stringify([for(n in data.natives)if(n.lib=="sfimgui"){library:n.lib,name:n.name}],null,"  "));
+        sys.io.File.saveContent("build/release-imports.json",haxe.Json.stringify([for(n in data.natives)if(n.lib=="sfimgui"||n.lib.indexOf("sfcursor")>=0){library:n.lib,name:n.name}],null,"  "));
         Sys.println("PASS release bytecode audit: no sfpad imports, logger type or controller recording path");
     }
 }

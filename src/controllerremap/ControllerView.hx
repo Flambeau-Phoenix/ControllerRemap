@@ -10,6 +10,7 @@ import controllerremap.ui.DragDropHelper;
 
 /** Retained vector controller. Buttons inspect cached assignments or supply a drag payload. */
 class ControllerView {
+    public static var focusFirst=false;
     static var labels=["A","B","X","Y","LB","RB","LT","RT","<","=","L3","R3","Up","Dn","<",">"];
     static var xs=[372,416,328,372,108,372,108,372,218,266,108,280,164,164,120,208];
     static var ys=[202,158,158,114,64,64,20,20,128,128,128,218,176,264,220,220];
@@ -38,8 +39,9 @@ class ControllerView {
             target.y=origin.y+(ys[i]-20)*scale;ImGui.setCursorPos(target);
             ImGui.pushID_Int(i);var failure:Dynamic=null;
             try {
+                if(i==0&&focusFirst){ImGui.setKeyboardFocusHere();focusFirst=false;}
                 if(UiChrome.navButton(labels[i],i==selected||highlighted[i],size))clicked=i;
-                if(ImGui.isItemHovered())ImGui.setTooltip(tooltips[i]);
+                if(Help.tooltips&&ImGui.isItemHovered())ImGui.setTooltip(tooltips[i]);
                 DragDropHelper.buttonSource(i,Remap.PADS[i]);
             }catch(e:Dynamic)failure=e;
             ImGui.popID();if(failure!=null)throw failure;

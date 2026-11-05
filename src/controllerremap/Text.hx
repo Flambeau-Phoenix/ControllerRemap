@@ -12,4 +12,10 @@ class Text {
         bytes.fill(0,size,0);bytes.blit(0,b.getData(),0,n);
     }
     public function get():String return @:privateAccess String.fromUTF8(bytes);
+    public static function readClipboard():String {
+        var raw=imgui.ImGui.getClipboardText();if(raw==null)return "";
+        var n=0;while(n<=Profile.MAX_BYTES&&raw.getUI8(n)!=0)n++;
+        if(n>Profile.MAX_BYTES)return "";
+        return raw.toBytes(n).getString(0,n);
+    }
 }

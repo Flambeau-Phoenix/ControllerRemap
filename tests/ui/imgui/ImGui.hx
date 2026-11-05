@@ -8,6 +8,8 @@ class ImGui {
     public static var styles=0;
     public static var popupEnds=0;
     public static var focuses=0;
+    public static var undocks=0;
+    public static function setNextWindowDockID(id:Int,cond:Int):Void {if(id!=0)throw "Docking must be disabled";undocks++;}
     public static function setNextWindowFocus():Void focuses++;
     public static function vec2(x:Float,y:Float):ImVec2 return {x:x,y:y};
     public static function setNextWindowSize(size:ImVec2,cond:Int):Void {}
@@ -24,5 +26,7 @@ class ImGui {
     public static function openPopup(id:String):Void {}
     public static function beginPopup(id:String):Bool return shown;
     public static function endPopup():Void popupEnds++;
+    public static function closeCurrentPopup():Void {}
+    public static function isWindowFocused(flags:Int=0):Bool return false;
     public static function menuItem(label:String,shortcut:String,selected:Bool,enabled:Bool):Bool return false;
 }

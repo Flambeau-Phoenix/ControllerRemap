@@ -91,11 +91,13 @@ class BindingTools {
         summary=Remap.PADS[button]+" - "+lookupRows.length+" action"+(lookupRows.length==1?"":"s");
     }
     public static function menuBar():Void UiMenus.bar(barFn);
-    static function drawBar():Void {UiMenus.menu("File",fileFn);UiMenus.menu("View",viewFn);}
+    static function drawBar():Void {UiMenus.menu("File",fileFn);UiMenus.menu("View",viewFn);UiMenus.menu("Help",drawHelp);}
+    static function drawHelp():Void {
+        if(UiMenus.item("Controls",true,Help.show))Help.show=!Help.show;
+        if(UiMenus.item("Tooltips",true,Help.tooltips))Help.tooltips=!Help.tooltips;
+    }
     static function drawFile():Void {
-        if(UiMenus.item("Save profile",canSave&&Remap.pendingEdit==null))saveRequested=true;
-        if(UiMenus.item("Refresh profiles",Remap.pendingEdit==null))refreshRequested=true;
-        ImGui.separator();if(UiMenus.item("Close window"))closeRequested=true;
+        if(UiMenus.item("Close window"))closeRequested=true;
     }
     static function drawView():Void {
         if(UiMenus.item("Profiles panel"))openProfilesRequested=true;
@@ -151,7 +153,7 @@ class BindingTools {
         UiChrome.centeredHeader("Controller",30);UiChrome.gap(8);
         var picked=ControllerView.draw(button,highlighted,diagramHints);
         if(picked>=0)inspect(buttons[picked]);
-        note("Click a button to inspect its assignments. Drag it onto a binding to assign it.");
+        if(Help.show)note("Select to inspect; drag to assign.");
     }
     static function drawPalette():Void {
         UiChrome.centeredHeader("Controller",38);UiChrome.gap(12);
@@ -160,13 +162,14 @@ class BindingTools {
         UiChrome.subHeader("D-pad");drawKeys(12,16);UiChrome.gap(12);
         if(UiChrome.groupHeader("Other buttons##lookupOther"))drawKeys(8,12);
         if(UiChrome.groupHeader("Stick directions##lookupSticks"))drawKeys(16,24);
-        UiChrome.gap(12);note("Click to inspect. Drag a button onto a binding to assign it.");
+        if(Help.show){UiChrome.gap(12);note("Select to inspect; drag to assign.");}
+        ControllerScroll.apply();
     }
     static function drawKeys(first:Int,last:Int):Void {
         for(i in first...last){
             if((i-first)%2!=0)ImGui.sameLine(0,12);
             if(UiChrome.navButton(keyLabels[i],button==i,keySize)){button=i;dirty=true;}
-            if(ImGui.isItemHovered())ImGui.setTooltip(buttons[i]);
+            if(Help.tooltips&&ImGui.isItemHovered())ImGui.setTooltip(buttons[i]);
             DragDropHelper.buttonSource(i,buttons[i]);
         }
     }
@@ -177,10 +180,12 @@ class BindingTools {
         UiChrome.gap(12);ImGui.textUnformatted(summary);
         note(actual?"All contexts, modifiers and mode holds.":(Remap.enabled?"Configured controller layout.":"Overrides off. Showing the configured layout."));UiChrome.gap(8);
         ImGui.getContentRegionAvail(listSize);listSize.y=Math.max(128,listSize.y);UiScope.child("##buttonUses",listSize,listFn);
+        ControllerScroll.apply();
     }
     static function drawUseList():Void {
         if(lookupRows.length==0){note("No actions use this button. Choose another button above.");return;}
         UiScope.table("##buttonUseTable",2,rowsFn,ImGuiTableFlags.SizingStretchProp|ImGuiTableFlags.BordersOuter|ImGuiTableFlags.BordersInnerH|ImGuiTableFlags.RowBg|ImGuiTableFlags.NoSavedSettings,zero,0);
+        ControllerScroll.apply();
     }
     static function drawUseRows():Void {
         ImGui.tableSetupColumn("Action",ImGuiTableColumnFlags.WidthStretch,0.46);ImGui.tableSetupColumn("Binding / use",ImGuiTableColumnFlags.WidthStretch,0.54);ImGui.tableHeadersRow();
@@ -188,7 +193,7 @@ class BindingTools {
             ImGui.tableNextRow();ImGui.tableSetColumnIndex(0);ImGui.pushID_Str(row.id);var failure:Dynamic=null;
             try {
                 if(ImGui.selectable(row.label,selectedAction==row.id,ImGuiSelectableFlags.SpanAllColumns,rowSize)&&Remap.pendingEdit==null)selectId=row.id;
-                if(ImGui.isItemHovered())ImGui.setTooltip(row.id);
+                if(Help.tooltips&&ImGui.isItemHovered())ImGui.setTooltip(row.id);
                 actionContext(row.id);
             }catch(e:Dynamic)failure=e;
             ImGui.popID();if(failure!=null)throw failure;

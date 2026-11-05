@@ -14,9 +14,11 @@ class UiShellTest {
         var open=new BoolRef(false);
         ToolWindow.drawMenuWindow("test",open,body);
         check(ImGui.begins==0&&ImGui.ends==0&&calls==0,"closed editor has no native window scope");
+        check(ImGui.undocks==0,"closed panels do not alter docking state");
         open.set(true);ImGui.shown=false;
         ToolWindow.drawMenuWindow("test",open,body);
         check(ImGui.begins==1&&ImGui.ends==1&&calls==0,"clipped Begin(false) still gets End");
+        check(ImGui.undocks==1,"open panels explicitly leave previously saved dock nodes");
         check(ImGui.styles==0&&UiChrome.depth==0,"clipped window restores styling");
         ImGui.shown=true;ToolWindow.drawMenuWindow("test",open,body);
         check(calls==1&&ImGui.begins==2&&ImGui.ends==2,"visible tool window renders once");

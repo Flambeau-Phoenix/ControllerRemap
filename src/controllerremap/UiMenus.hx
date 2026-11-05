@@ -2,6 +2,7 @@ package controllerremap;
 
 import imgui.ImGui;
 import controllerremap.ui.ContextMenuSystem;
+import controllerremap.ui.PopupLifetime;
 
 /** Local port of the shared context-menu pattern, with callback-owned cleanup. */
 class UiMenus {
@@ -18,7 +19,7 @@ class UiMenus {
     }
     public static function menu(label:String,body:Void->Void,enabled:Bool=true):Void {
         if(!ImGui.beginMenu(label,enabled))return;
-        var failure:Dynamic=null;try body()catch(e:Dynamic)failure=e;
+        var failure:Dynamic=null;try {if(!PopupLifetime.dismiss())body();}catch(e:Dynamic)failure=e;
         ImGui.endMenu();if(failure!=null)throw failure;
     }
     public static function item(label:String,enabled:Bool=true,selected:Bool=false):Bool return ContextMenuSystem.menuItem(label,enabled,selected);

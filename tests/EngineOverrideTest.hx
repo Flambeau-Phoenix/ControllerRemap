@@ -12,6 +12,7 @@ class EngineOverrideTest {
         var jump:Array<NativeBind>=[space,a],attack:Array<NativeBind>=[bind(null,81),x],mode:Array<NativeBind>=[bind("RT")];
         Input.defaultBinds.set("Jump",jump);Input.defaultBinds.set("Attack",attack);Input.defaultBinds.set("WeaponMode",mode);
         var menu:Array<NativeBind>=[bind("B")];Input.defaultBinds.set("Menu_Back",menu);
+        Input.defaultBinds.set("Menu_Inspect",[bind("X")]);
         var user:Array<NativeBind>=[userKey];Input.userBinds.set("Jump",user);
         var originalCache=Input.bindingsPerMode;
         // Reproduce Claude's failure: later controller entries in userBinds are ignored.
@@ -53,7 +54,7 @@ class EngineOverrideTest {
         check(actual.length==3&&HlxRuntime.resolveField(actual.getDyn(0),"code")==74&&HlxRuntime.resolveField(actual.getDyn(1),"code")==75,"every keyboard alternative preserved even with pad-first native array");
         Remap.setEnabled(false);check(Input.defaultBinds.get("Jump")==unusual,"unusual native order restored exactly");
         var replacement=new hlx.std.haxe.ds.StringMap();
-        replacement.set("Jump",jump);replacement.set("Attack",attack);replacement.set("WeaponMode",mode);replacement.set("Menu_Back",menu);
+        replacement.set("Jump",jump);replacement.set("Attack",attack);replacement.set("WeaponMode",mode);replacement.set("Menu_Back",menu);replacement.set("Menu_Inspect",[bind("X")]);
         Input.defaultBinds=replacement;Remap.setEnabled(true);Remap.poll(20);
         check(!Remap.applyFailed&&Remap.readPads("Jump")[0].pad=="B","engine table refresh reapplies requested layout");
         Remap.setEnabled(false);check(replacement.get("Jump")==jump,"disable restores refreshed native table");
@@ -96,15 +97,25 @@ class EngineOverrideTest {
         check(Remap.swapActions("Jump","Attack")&&nativeBefore==Remap.text(Remap.readPads("Jump"))+Remap.text(Remap.readPads("Attack")),"swap while disabled changes layout only");
         Remap.setEnabled(true);check(!Remap.applyFailed&&Remap.text(Remap.readPads("Jump"))==jumpLayout,"disabled swap applies when overrides resume");
         Remap.clearAll();Remap.setOverride("Jump",[{pad:"X",mod:-1,mode:-1}]);Remap.setSwap(true);
-        check(Remap.swapActions("Jump","Menu_Back"),"swap across menu and gameplay actions with A/B switch on");
-        check(Remap.readPads("Jump")[0].pad=="A"&&Remap.readPads("Menu_Back")[0].pad=="X","swap exchanges visible bindings without double-applying A/B");
+        check(!Remap.swapActions("Jump","Menu_Back")&&Remap.readPads("Jump")[0].pad=="X"&&Remap.readPads("Menu_Back")[0].pad=="A","cross-family swap is rejected with A/B switch on");
+        check(Remap.swapActions("Menu_Inspect","Menu_Back"),"same-family menu swap with A/B switch on");
+        check(Remap.readPads("Menu_Inspect")[0].pad=="A"&&Remap.readPads("Menu_Back")[0].pad=="X","swap exchanges visible bindings without double-applying A/B");
         Remap.saveProfile("Swapped Layout");Remap.clearAll();Remap.loadProfile("Swapped Layout");
-        check(Remap.readPads("Jump")[0].pad=="A"&&Remap.readPads("Menu_Back")[0].pad=="X"&&Remap.swapAB,"swapped bindings persist in profiles");
-        var beforeFailedSwap=Remap.text(Remap.layoutPads("Jump"))+Remap.text(Remap.layoutPads("Menu_Back"));
+        check(Remap.readPads("Menu_Inspect")[0].pad=="A"&&Remap.readPads("Menu_Back")[0].pad=="X"&&Remap.readPads("Jump")[0].pad=="X"&&Remap.swapAB,"swapped family bindings persist in profiles");
+        var beforeFailedSwap=Remap.text(Remap.layoutPads("Menu_Inspect"))+Remap.text(Remap.layoutPads("Menu_Back"));
         check(!Remap.swapActions("Jump","Jump")&&!Remap.swapActions("Missing","Jump"),"reject same-action and unknown swaps");
-        Input.refuseAction="Jump";check(!Remap.swapActions("Jump","Menu_Back"),"failed native swap is rejected");
-        check(beforeFailedSwap==Remap.text(Remap.layoutPads("Jump"))+Remap.text(Remap.layoutPads("Menu_Back")),"failed swap preserves the previous configured layout");
+        Input.refuseAction="Menu_Back";check(!Remap.swapActions("Menu_Inspect","Menu_Back"),"failed native swap is rejected");
+        check(beforeFailedSwap==Remap.text(Remap.layoutPads("Menu_Inspect"))+Remap.text(Remap.layoutPads("Menu_Back")),"failed swap preserves the previous configured layout");
         Input.refuseAction="";Remap.apply();check(!Remap.applyFailed,"previous layout can be reapplied after a swap refusal");
+        Remap.setOverride("Attack",[{pad:"Y",mod:-1,mode:-1}]);
+        var beforeRename=Remap.text(Remap.readPads("Jump"))+Remap.text(Remap.readPads("Attack"));
+        check(Remap.dirty&&Remap.renameProfile("Swapped Layout","Renamed Layout"),"rename active saved profile with unsaved edits");
+        check(Remap.activeProfile=="Renamed Layout"&&Remap.dirty,"rename preserves active identity and unsaved state");
+        check(beforeRename==Remap.text(Remap.readPads("Jump"))+Remap.text(Remap.readPads("Attack")),"rename never reapplies the saved layout over live edits");
+        var exported=Remap.exportProfile("Renamed Layout");check(exported!=null,"export reads renamed saved profile");
+        var imported=Remap.importProfile(exported);
+        check(imported=="Renamed Layout 2"&&Remap.activeProfile=="Renamed Layout"&&Remap.dirty,"import adds a unique saved profile without switching or clearing unsaved edits");
+        check(!Remap.saveProfile("CON")&&Remap.dirty,"failed save reports failure and retains unsaved state");
         Sys.println("PASS "+checks+" HashLink engine bridge checks (offline engine fixture)");
     }
 }

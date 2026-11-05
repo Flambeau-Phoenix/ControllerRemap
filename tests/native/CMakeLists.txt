@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.13)
+project(controller_ui_probe CXX)
+set(HASHLINK_DIR "" CACHE PATH "HashLink SDK")
+get_filename_component(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
+add_library(sfuitest SHARED ui_probe.cpp)
+target_include_directories(sfuitest PRIVATE "${HASHLINK_DIR}/include" "${HASHLINK_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui")
+set_target_properties(sfuitest PROPERTIES PREFIX "" SUFFIX ".hdll")

@@ -9,9 +9,9 @@ class WindowInputTest {
         open=p.update(open,true,true,1.12);check(open,"duplicate ImGui/game signal must not toggle twice");
         open=p.update(open,true,true,1.4);check(!open,"F10 closes in camera mode");
         open=p.update(open,false,true,2);check(open,"F10 opens in free cursor mode");
-        open=p.update(open,true,false,2.1);check(!open,"entering camera mode closes an interactive editor");
-        open=p.update(open,false,false,2.2);check(!open,"free cursor does not reopen closed editor");
-        open=p.update(open,false,true,2.5);check(open,"editor can reopen after camera transition");
+        open=p.update(open,true,false,2.1);check(open,"Alt hiding the cursor keeps the editor open");
+        open=p.update(open,false,false,2.2);check(open,"exposing the cursor keeps the editor open");
+        open=p.update(open,false,true,2.5);check(!open,"F10 still closes after camera transitions");
         open=p.update(false,false,false,2.6);check(!open,"close button remains closed");
         open=p.update(open,null,true,3);check(open,"F10 opens while cursor state is unavailable");
         open=p.update(open,null,false,3.1);check(open,"unknown cursor state does not close panel");

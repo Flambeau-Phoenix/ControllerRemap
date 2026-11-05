@@ -10,7 +10,7 @@ class ContextMenuSystem {
     }
     public static function draw(id:String,body:Void->Void):Void {
         if(!ImGui.beginPopup(id))return;
-        var failure:Dynamic=null;try body()catch(e:Dynamic)failure=e;
+        var failure:Dynamic=null;try {if(!PopupLifetime.dismiss())body();}catch(e:Dynamic)failure=e;
         ImGui.endPopup();if(failure!=null)throw failure;
     }
     public static function menuItem(label:String,enabled:Bool=true,selected:Bool=false):Bool return ImGui.menuItem(label,"",selected,enabled);

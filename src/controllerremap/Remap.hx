@@ -12,7 +12,7 @@ typedef PendingEdit = {plan:BindingPlan,revision:Int,lines:Array<String>,swapTex
  * All filesystem access and engine reads run in observe; the UI consumes cached rows.
  */
 class Remap {
-    public static inline var VERSION="0.3.1";
+    public static inline var VERSION="1.2.2";
     public static inline var DIR="hlx/mods/controllerremap";
     public static inline var PROFILES=DIR+"/profiles";
     public static var PADS:Array<String>=["A","B","X","Y","LB","RB","LT","RT","Back","Start","AnalogClick","RanalogClick",
@@ -184,7 +184,7 @@ class Remap {
         nextCheck=now+1;
         try {
             if(!native.current()){
-                native.restore();native=new NativeBindings();
+                native.restore();native=new NativeBindings();NativeBindings.observeFamilies(allIds);
                 for(id in ids)baseline.set(id,readPads(id,true));
                 apply();
             }
@@ -208,6 +208,7 @@ class Remap {
             if(all.length==0) return;
             all.sort(function(a,b)return a<b?-1:(a>b?1:0));
             allIds=all;
+            NativeBindings.observeFamilies(allIds);
             ids=[];baseline=new Map();
             for(id in all){var r=readBoth(id);if(r.pads.length>0){ids.push(id);baseline.set(id,r.pads);}}
             if(ids.length==0) return;
@@ -310,6 +311,7 @@ class Remap {
         if(!ready||left==null||right==null||left==right||!baseline.exists(left)||!baseline.exists(right)){
             status="Choose two different controller actions to swap.";return false;
         }
+        if(!InputFamilies.same(left,right)){status="Swap two actions in the same input family.";return false;}
         var a=layoutPads(left),b=layoutPads(right);
         var before=overrides,wasDirty=dirty;
         var next=new Map<String,Array<Pad>>();for(id in before.keys())next.set(id,before.get(id));
@@ -358,11 +360,11 @@ class Remap {
     }
     static function entries(pads:Array<Pad>):Array<Dynamic> return [for(p in pads) {pad:p.pad,modifier:p.mod,mode:p.mode}];
 
-    public static function saveProfile(raw:String):Void {
-        if(pendingEdit!=null){status="Resolve the binding conflict before saving a profile.";return;}
+    public static function saveProfile(raw:String):Bool {
+        if(pendingEdit!=null){status="Resolve the binding conflict before saving a profile.";return false;}
         var name=cleanName(raw);
-        if(!Profile.validName(name)){status="Use a profile name with letters, numbers, space, - or _. Windows device names are reserved.";return;}
-        if(!ensureDir()){status="Could not create "+PROFILES;return;}
+        if(!Profile.validName(name)){status="Use a profile name with letters, numbers, space, - or _. Windows device names are reserved.";return false;}
+        if(!ensureDir()){status="Could not create "+PROFILES;return false;}
         try {
             var actions:Array<Dynamic>=[];
             var keys=[for(k in overrides.keys()) k];keys.sort(function(a,b)return a<b?-1:(a>b?1:0));
@@ -371,7 +373,8 @@ class Remap {
             activeProfile=name;dirty=false;listProfiles();
             status="Saved profile \""+name+"\" ("+actions.length+" customized action"+(actions.length==1?"":"s")+").";
             saveSettings();
-        } catch(e:Dynamic){status="Save failed: "+Std.string(e);}
+            return true;
+        } catch(e:Dynamic){status="Save failed: "+Std.string(e);return false;}
     }
 
     public static function loadProfile(raw:String):Void {
@@ -405,6 +408,27 @@ class Remap {
             if(wasActive)saveSettings();
             return true;
         }catch(e:Dynamic){status="Could not delete profile: "+Std.string(e);return false;}
+    }
+
+    public static function renameProfile(from:String,to:String):Bool {
+        if(pendingEdit!=null){status="Resolve the binding conflict first.";return false;}
+        try {
+            ProfileFiles.rename(PROFILES,from,to,ids,PADS);
+            if(activeProfile.toLowerCase()==from.toLowerCase()){activeProfile=to;saveSettings();}
+            listProfiles();status="Renamed to \""+to+"\".";return true;
+        }catch(e:Dynamic){status="Rename failed: "+Std.string(e);return false;}
+    }
+    public static function importProfile(json:String):String {
+        if(pendingEdit!=null){status="Resolve the binding conflict first.";return "";}
+        try {
+            if(!ensureDir())throw "Cannot create profile folder";
+            var name=ProfileFiles.importJson(PROFILES,json,ids,PADS);
+            listProfiles();status="Imported \""+name+"\". Choose Load to use it.";return name;
+        }catch(e:Dynamic){status="Import failed: "+Std.string(e);return "";}
+    }
+    public static function exportProfile(name:String):String {
+        try {return ProfileFiles.read(PROFILES,name,ids,PADS);}
+        catch(e:Dynamic){status="Export failed: "+Std.string(e);return null;}
     }
 
     static function saveSettings():Void {

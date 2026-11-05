@@ -23,6 +23,8 @@ class ConflictDialog {
     static inline var TITLE="Binding conflict###ControllerRemap.Conflict";
     public static var choice=-1;
     public static var dismiss=false;
+    public static var controllerNavigation=false;
+    public static var focusRecovered(default,null)=false;
     static var seen:PendingEdit=null;
     static var visible=false;
     static var opening=false;
@@ -33,9 +35,14 @@ class ConflictDialog {
     static var redBackground:ImVec4;static var dim:ImVec4;
     static var rows:Array<ChangeRow>=[];
     static var heading="";
+    static var familyHint="";
     static var tableFn:Void->Void;static var rowsFn:Void->Void;
+    static var hintMeasure:ImVec2;static var legendMeasure:ImVec2;
+    static var footerHint="";static var footerLegend="";static var footerFn:Void->Void;
     public static function init():Void {
-        opened=new BoolRef(true);size=ImGui.vec2(650,490);minimum=ImGui.vec2(620,420);maximum=ImGui.vec2(920,800);pivot=ImGui.vec2(0.5,0.5);
+        opened=new BoolRef(true);size=ImGui.vec2(760,620);minimum=ImGui.vec2(700,540);maximum=ImGui.vec2(1100,1000);pivot=ImGui.vec2(0.5,0.5);
+        hintMeasure=ImGui.vec2(0,0);legendMeasure=ImGui.vec2(0,0);
+        footerFn=drawFooter;footerLegend=ControllerLegend.text(EditorFocus.EDITOR,false,true,false);
         button=ImGui.vec2(144,30);list=ImGui.vec2(0,200);zero=ImGui.vec2(0,0);available=ImGui.vec2(0,0);
         pos=ImGui.vec2(0,0);titlePos=ImGui.vec2(0,0);band=ImGui.vec2(0,52);end=ImGui.vec2(0,0);
         var t=ThemePalette.current(),red=ThemePalette.status(ThemePalette.STATUS_DANGER);
@@ -48,15 +55,23 @@ class ConflictDialog {
         if(edit==seen)return;
         seen=edit;opening=true;opened.set(true);dismiss=false;
         heading=ActionLabels.display(edit.plan.action)+" - "+Remap.text(edit.plan.after);
+        familyHint=InputFamilies.label(edit.plan.action)+" only. Other input families are kept.";
+        footerHint=edit.plan.swap==null?edit.plan.swapReason:edit.swapText;
         rows=[];var layout=Remap.snapshot();
         var keys=[for(key in edit.plan.move.keys())key];keys.sort(Reflect.compare);
         for(key in keys)rows.push({label:ActionLabels.display(key),before:Remap.text(layout.get(key)),after:Remap.text(edit.plan.move.get(key))});
     }
-    public static function reset():Void {seen=null;visible=false;opening=false;dismiss=false;choice=-1;rows=[];}
+    public static function reset():Void {seen=null;visible=false;opening=false;dismiss=false;choice=-1;rows=[];controllerNavigation=false;focusRecovered=false;}
     public static function active():Bool return visible||opening;
     public static function draw():Void {
+        focusRecovered=false;
         if(seen==null)return;
         if(Remap.pendingEdit==null&&!visible&&!opening)return;
+        // Another UI can clear native popup/focus state without resolving our pending edit.
+        // Reopen that unresolved dialog instead of leaving an invisible modal lock behind.
+        if(Remap.pendingEdit==seen&&!dismiss&&opened.get()&&choice<0&&!ImGui.isPopupOpen(TITLE)){
+            opening=true;visible=false;
+        }
         if(opening&&!dismiss&&Remap.pendingEdit!=null){ImGui.openPopup(TITLE);opening=false;}
         ImGui.setNextWindowSize(size,ImGuiCond.Appearing);ImGui.setNextWindowSizeConstraints(minimum,maximum);
         if(!visible){var vp=ImGui.getMainViewport();if(vp!=null)ImGui.setNextWindowPos(ImGui.ImGuiViewport_GetCenter(vp),ImGuiCond.Appearing,pivot);}
@@ -70,6 +85,7 @@ class ConflictDialog {
             visible=true;
             try {
                 if(dismiss||Remap.pendingEdit==null||!opened.get()){ImGui.closeCurrentPopup();visible=false;opening=false;}
+                else if(ImGui.isKeyPressed(imgui.Enums.ImGuiKey.Escape,false))finish(0);
                 else drawBody();
             }catch(e:Dynamic){failure=e;ImGui.closeCurrentPopup();choice=0;visible=false;}
             ImGui.endPopup();
@@ -91,19 +107,29 @@ class ConflictDialog {
         }catch(e:Dynamic)titleFailure=e;
         if(font!=null)ImGui.popFont();if(titleFailure!=null)throw titleFailure;
         ImGui.dummy(band);UiChrome.gap(12);
-        note(heading);note("Your current bindings have not changed. Confirming the move will clear the other assignments shown below.");
-        UiChrome.gap(8);list.y=Math.max(120,ImGui.getContentRegionAvail().y-134);UiScope.child("##conflictChanges",list,tableFn);
-        UiChrome.gap(12);note(edit.plan.swap==null?edit.plan.swapReason:edit.swapText);UiChrome.gap(12);
+        note(heading);note(familyHint);
+        UiChrome.gap(8);ImGui.getContentRegionAvail(available);
+        ImGui.calcTextSize(footerHint,false,available.x,hintMeasure);ImGui.calcTextSize(footerLegend,false,available.x,legendMeasure);
+        list.y=Math.max(24,available.y-hintMeasure.y-legendMeasure.y-132);UiScope.child("##conflictChanges",list,tableFn);
+        footerFn();
+    }
+    static function drawFooter():Void {
+        var edit=Remap.pendingEdit;
+        UiChrome.gap(12);note(footerHint);UiChrome.gap(12);
         ImGui.getContentRegionAvail(available);ImGui.setCursorPosX(ImGui.getCursorPosX()+Math.max(0,(available.x-464)/2));
+        if(controllerNavigation&&!ImGui.isAnyItemFocused()){
+            ImGui.setWindowFocus();ImGui.setKeyboardFocusHere();focusRecovered=true;
+        }
         if(UiChrome.ghostButton("Cancel##conflict",button))finish(0);
         ImGui.setItemDefaultFocus();ImGui.sameLine(0,16);
         ImGui.beginDisabled(edit.plan.swap==null);var failure:Dynamic=null;
         try {if(UiChrome.ghostButton("Swap##conflict",button))finish(2);}catch(e:Dynamic)failure=e;
         ImGui.endDisabled();if(failure!=null)throw failure;
         ImGui.sameLine(0,16);if(UiChrome.dangerButton("Confirm move##conflict",button))finish(1);
+        UiChrome.gap(6);note(footerLegend);ControllerScroll.apply();
     }
     static function finish(result:Int):Void {choice=result;ImGui.closeCurrentPopup();visible=false;}
-    static function drawTable():Void {UiScope.table("##changes",3,rowsFn,ImGuiTableFlags.SizingStretchProp|ImGuiTableFlags.BordersOuter|ImGuiTableFlags.BordersInnerH|ImGuiTableFlags.RowBg,zero,0);}
+    static function drawTable():Void {UiScope.table("##changes",3,rowsFn,ImGuiTableFlags.SizingStretchProp|ImGuiTableFlags.BordersOuter|ImGuiTableFlags.BordersInnerH|ImGuiTableFlags.RowBg,zero,0);ControllerScroll.apply(true);}
     static function drawRows():Void {
         ImGui.tableSetupColumn("Action",ImGuiTableColumnFlags.WidthStretch,0.34);ImGui.tableSetupColumn("Current",ImGuiTableColumnFlags.WidthStretch,0.33);ImGui.tableSetupColumn("After move",ImGuiTableColumnFlags.WidthStretch,0.33);ImGui.tableHeadersRow();
         for(row in rows){ImGui.tableNextRow();ImGui.tableSetColumnIndex(0);note(row.label);ImGui.tableSetColumnIndex(1);note(row.before);ImGui.tableSetColumnIndex(2);note(row.after);}

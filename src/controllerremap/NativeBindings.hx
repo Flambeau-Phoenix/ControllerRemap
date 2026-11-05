@@ -8,6 +8,20 @@ typedef NativeBind={code:Null<Int>,modifier:Null<Int>,mode:Null<Int>,padCode:Dyn
  * Keep native keyboard entries and the user's map intact. Restore original arrays by identity.
  */
 class NativeBindings {
+    /** Observe-only metadata. The pure planner never reads live engine records. */
+    public static function observeFamilies(ids:Array<String>):Void {
+        try {
+            var input=HlxRuntime.resolveStaticField(HlxRuntime.resolveType("Data"),"input");
+            if(input==null)return;
+            var raw=HlxRuntime.resolveField(input,"byId");if(raw==null)return;
+            var table:hlx.std.haxe.ds.StringMap=cast raw;
+            for(id in ids){
+                var row=table.get(id);if(row==null)continue;
+                var f:Dynamic=HlxRuntime.resolveField(row,"flags"),g:Dynamic=HlxRuntime.resolveField(row,"group");
+                if(Std.isOfType(f,Int)&&Std.isOfType(g,Int))InputFamilies.record(id,f,g);
+            }
+        }catch(_:Dynamic){}
+    }
     var defaults:hlx.std.haxe.ds.StringMap;
     var session:OverrideSession<Dynamic>;
     var oldModes:hlx.std.haxe.ds.IntMap;
